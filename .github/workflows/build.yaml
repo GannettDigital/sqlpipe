@@ -1,7 +1,7 @@
 ---
 # yamllint disable rule:line-length
 
-name: build
+name: Run Tests and Build
 
 on:  # yamllint disable-line rule:truthy
   push:
@@ -9,13 +9,21 @@ on:  # yamllint disable-line rule:truthy
 
 jobs:
   build:
-    uses: GannettDigital/dms-devops-github-actions/.github/workflows/build-docker-and-upload-image.yaml@main
-    with:
-      submodule_checkout: false
-      override_docker_url: ''
-      build_context: '.'
-      docker_repo: 'gcp'
-      cpu_platforms: 'linux/amd64,linux/arm64'
-    secrets: inherit
+    runs-on: [self-hosted, tools-low, cloud-engineering]
+
+    steps:
+
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4
+        with:
+          fetch-depth: 0
+
+      - uses: GannettDigital/dms-devops-github-actions/.github/workflows/build-docker-and-upload-image.yaml@main
+        with:
+          submodule_checkout: false
+          override_docker_url: ''
+          build_context: '.'
+          docker_repo: 'gcp'
+          cpu_platforms: 'linux/amd64,linux/arm64'
+          secrets: inherit
 
 ...
