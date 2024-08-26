@@ -628,10 +628,10 @@ func (system Mysql) getPrimaryKeysRows(schema, table string) (rows *sql.Rows, er
 	unescapedSchemaPeriodTable := getSchemaPeriodTable(schema, table, system, false)
 
 	query := fmt.Sprintf(`
-		SELECT 
-			COLUMN_NAME 
-		FROM 
-			information_schema.KEY_COLUMN_USAGE 
+		SELECT
+			COLUMN_NAME
+		FROM
+			information_schema.KEY_COLUMN_USAGE
 		WHERE lower(TABLE_NAME) = lower('%v')
 			AND CONSTRAINT_NAME = 'PRIMARY';
 
@@ -742,7 +742,16 @@ func (system Mysql) getSqlFormatters() (
 
 func (system Mysql) getTableColumnInfosRows(schema, table string) (rows *sql.Rows, err error) {
 	query := fmt.Sprintf(`
-		WITH PrimaryKeys AS (
+		SELECT
+			columns.COLUMN_NAME AS col_name,
+			columns.DATA_TYPE AS col_type,
+			COALESCE(columns.NUMERIC_PRECISION, -1) AS col_precision,
+			COALESCE(columns.NUMERIC_SCALE, -1) AS col_scale,
+			COALESCE(columns.CHARACTER_MAXIMUM_LENGTH, -1) AS col_length,
+			CASE WHEN pk.COLUMN_NAME IS NOT NULL THEN true ELSE false END AS col_is_primary
+		FROM
+			information_schema.COLUMNS AS columns
+		LEFT JOIN (
 			SELECT
 				kcu.COLUMN_NAME
 			FROM
@@ -753,24 +762,16 @@ func (system Mysql) getTableColumnInfosRows(schema, table string) (rows *sql.Row
 			WHERE
 				tc.CONSTRAINT_TYPE = 'PRIMARY KEY'
 				AND kcu.TABLE_NAME = '%v'
-		)
-		
-		SELECT
-			columns.COLUMN_NAME AS col_name,
-			columns.DATA_TYPE AS col_type,
-			COALESCE(columns.NUMERIC_PRECISION, -1) AS col_precision,
-			COALESCE(columns.NUMERIC_SCALE, -1) AS col_scale,
-			COALESCE(columns.CHARACTER_MAXIMUM_LENGTH, -1) AS col_length,
-			CASE WHEN pk.COLUMN_NAME IS NOT NULL THEN true ELSE false END AS col_is_primary
-		FROM
-			information_schema.COLUMNS AS columns
-		LEFT JOIN PrimaryKeys pk ON columns.COLUMN_NAME = pk.COLUMN_NAME
+			GROUP BY
+				kcu.COLUMN_NAME
+		) AS pk
+			ON columns.COLUMN_NAME = pk.COLUMN_NAME
 		WHERE
 			columns.TABLE_NAME = '%v'
+			AND columns.TABLE_SCHEMA = '%v'
 		ORDER BY
 			columns.ORDINAL_POSITION;
-	`, table, table)
-
+	`, table, table, schema)
 	rows, err = system.query(query)
 	if err != nil {
 		return nil, fmt.Errorf("error getting table column infos rows :: %v", err)
