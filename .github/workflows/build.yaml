@@ -1,0 +1,21 @@
+---
+# yamllint disable rule:line-length
+
+name: build
+
+on:  # yamllint disable-line rule:truthy
+  push:
+  pull_request:
+
+jobs:
+  build:
+    uses: GannettDigital/dms-devops-github-actions/.github/workflows/build-docker-and-upload-image.yaml@main
+    with:
+      submodule_checkout: false
+      override_docker_url: ''
+      build_context: '.'
+      docker_repo: 'gcp'
+      cpu_platforms: 'linux/amd64,linux/arm64'
+    secrets: inherit
+
+...
