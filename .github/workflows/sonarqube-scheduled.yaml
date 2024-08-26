@@ -1,0 +1,16 @@
+---
+# yamllint disable rule:line-length
+
+name: sonarqube-scheduled
+
+on:  # yamllint disable-line rule:truthy
+  workflow_dispatch:
+  schedule:
+    - cron: "15 17 16 * *"
+
+jobs:
+  sonarqube_scheduled:
+    uses: GannettDigital/dms-devops-github-actions/.github/workflows/sonarqube-scheduled.yaml@main
+    secrets: inherit
+
+...
